@@ -32,3 +32,42 @@ twitter = tweepy.Client(
     access_token=TW_ACCESS_TOKEN,
     access_token_secret=TW_ACCESS_SECRET
 )
+
+###########
+
+def check_and_post_latest():
+    try:
+        feed = bsky.app.bsky.feed.get_author_feed({'actor': TARGET_ACCOUNT, 'limit': 1})
+        if not feed['feed']:
+            print("No posts found.")
+            return
+
+        post = feed['feed'][0]['post']
+        uri = post['uri']
+        text = post['record'].get('text', '').strip()
+
+        cur.execute("SELECT uri FROM posted WHERE uri=?", (uri,))
+        if cur.fetchone():
+            print("No new post yet.")
+            return
+
+        if not text:
+            print("Latest post has no text.")
+            return
+
+        if len(text) > 280:
+            text = text[:277] + "..."
+
+        twitter.create_tweet(text=text)
+        cur.execute("INSERT INTO posted (uri) VALUES (?)", (uri,))
+        conn.commit()
+        print("✅ Posted new Bluesky update to Twitter:", text)
+
+    except Exception as e:
+        print("❌ Error:", e)
+
+# ---- LOOP ----
+print("🤖 Bot started! Checking every 2 minutes...")
+while True:
+    check_and_post_latest()
+    time.sleep(120)
