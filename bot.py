@@ -7,10 +7,10 @@ BLUESKY_HANDLE = "thealexsylvian.bsky.social"
 BLUESKY_PASSWORD = "auv3-vcfh-usq7-rmvb"
 TARGET_ACCOUNT = "mobydickatsea.bsky.social"
 
-TW_CONSUMER_KEY = "VlopdzJOGMISPP4qmGtyGDPOW"
-TW_CONSUMER_SECRET = "BiSLWHTxbil8lVjp0oQm98Umze5StmQLmbyfHR3LxXwYJrhBM8"
-TW_ACCESS_TOKEN = "1982998290192019456-asp8gvLsX8hSTDcyhj5srWxrVqAI9E"
-TW_ACCESS_SECRET = "1982998290192019456-asp8gvLsX8hSTDcyhj5srWxrVqAI9E"
+TW_CONSUMER_KEY = "OtoSGwSdBR1aRbKvy9dGVzqfT"
+TW_CONSUMER_SECRET = "SAHNob03sgupml6AlbPwFgxxncsAW1XM23ZDS3OWowPW58onPk"
+TW_ACCESS_TOKEN = "1982998290192019456-VIkmBfNZtIqhJRUFHsO6MgDQYe8jOO"
+TW_ACCESS_SECRET = "AH5nBrfGxDaXP17NmyMZgzIo82LiR93g6Hzh7efGRjTir"
 
 ##########
 
@@ -44,7 +44,7 @@ def check_and_post_latest():
 
         post = feed['feed'][0]['post']
         uri = post['uri']
-        text = post['record'].get('text', '').strip()
+        text = getattr(post.record, "text", "").strip()
 
         cur.execute("SELECT uri FROM posted WHERE uri=?", (uri,))
         if cur.fetchone():
