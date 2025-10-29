@@ -1,0 +1,3 @@
+python-dotenv
+atproto-client
+tweepy
