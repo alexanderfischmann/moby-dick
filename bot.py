@@ -69,7 +69,13 @@ def check_and_post_latest():
         print("❌ Error:", e)
 
 # ---- Loop ----
-print("🤖 Bot started! Checking every 2 minutes...")
-while True:
+# print("🤖 Bot started! Checking every 2 minutes...")
+# while True:
+#     check_and_post_latest()
+#     time.sleep(120)
+
+
+if __name__ == "__main__":
+    print("🤖 Bot started!")
     check_and_post_latest()
-    time.sleep(120)
+
