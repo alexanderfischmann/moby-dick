@@ -1,30 +1,32 @@
+import os
 import time
 import sqlite3
-from atproto import Client as BskyClient
+from dotenv import load_dotenv
+from atproto import Client
 import tweepy
 
-BLUESKY_HANDLE = "thealexsylvian.bsky.social"
-BLUESKY_PASSWORD = "auv3-vcfh-usq7-rmvb"
-TARGET_ACCOUNT = "mobydickatsea.bsky.social"
+load_dotenv()
 
-TW_CONSUMER_KEY = "OtoSGwSdBR1aRbKvy9dGVzqfT"
-TW_CONSUMER_SECRET = "SAHNob03sgupml6AlbPwFgxxncsAW1XM23ZDS3OWowPW58onPk"
-TW_ACCESS_TOKEN = "1982998290192019456-VIkmBfNZtIqhJRUFHsO6MgDQYe8jOO"
-TW_ACCESS_SECRET = "AH5nBrfGxDaXP17NmyMZgzIo82LiR93g6Hzh7efGRjTir"
+###########
 
-##########
+BLUESKY_HANDLE = os.getenv("BLUESKY_HANDLE_ENV")
+BLUESKY_PASSWORD = os.getenv("BLUESKY_PASSWORD_ENV")
+TARGET_ACCOUNT = os.getenv("TARGET_ACCOUNT_ENV")
+
+TW_CONSUMER_KEY = os.getenv("TW_CONSUMER_KEY_ENV")
+TW_CONSUMER_SECRET = os.getenv("TW_CONSUMER_SECRET_ENV")
+TW_ACCESS_TOKEN = os.getenv("TW_ACCESS_TOKEN_ENV")
+TW_ACCESS_SECRET = os.getenv("TW_ACCESS_SECRET_ENV")
+
+###########
 
 conn = sqlite3.connect('posts.db')
 cur = conn.cursor()
 cur.execute("CREATE TABLE IF NOT EXISTS posted (uri TEXT PRIMARY KEY)")
 conn.commit()
 
-######
-
-bsky = BskyClient()
-bsky.login(BLUESKY_HANDLE, BLUESKY_PASSWORD)
-
-###########
+bluesky = Client()
+bluesky.login(BLUESKY_HANDLE, BLUESKY_PASSWORD)
 
 twitter = tweepy.Client(
     consumer_key=TW_CONSUMER_KEY,
@@ -33,17 +35,17 @@ twitter = tweepy.Client(
     access_token_secret=TW_ACCESS_SECRET
 )
 
-###########
+############
 
 def check_and_post_latest():
     try:
-        feed = bsky.app.bsky.feed.get_author_feed({'actor': TARGET_ACCOUNT, 'limit': 1})
-        if not feed['feed']:
+        feed = bluesky.app.bsky.feed.get_author_feed({'actor': TARGET_ACCOUNT, 'limit': 1})
+        if not feed.feed:
             print("No posts found.")
             return
 
-        post = feed['feed'][0]['post']
-        uri = post['uri']
+        post = feed.feed[0].post
+        uri = post.uri
         text = getattr(post.record, "text", "").strip()
 
         cur.execute("SELECT uri FROM posted WHERE uri=?", (uri,))
@@ -66,7 +68,7 @@ def check_and_post_latest():
     except Exception as e:
         print("❌ Error:", e)
 
-# ---- LOOP ----
+# ---- Loop ----
 print("🤖 Bot started! Checking every 2 minutes...")
 while True:
     check_and_post_latest()
