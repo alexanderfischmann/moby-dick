@@ -69,13 +69,27 @@ def check_and_post_latest():
         print("❌ Error:", e)
 
 # ---- Loop ----
-print("🤖 Bot started! Checking every 2 minutes...")
-while True:
-    check_and_post_latest()
-    time.sleep(120)
-
-
-# if __name__ == "__main__":
-#     print("🤖 Bot started!")
+# print("🤖 Bot started! Checking every 2 minutes...")
+# while True:
 #     check_and_post_latest()
+#     time.sleep(120)
+
+
+if __name__ == "__main__":
+    import threading
+    from flask import Flask
+
+    # Start the bot loop in a background thread
+    thread = threading.Thread(target=lambda: [check_and_post_latest(), time.sleep(120)], daemon=True)
+    thread.start()
+
+    # Start a minimal Flask app to keep Render's port open
+    app = Flask(__name__)
+
+    @app.route("/")
+    def index():
+        return "🤖 Bluesky → Twitter bot is running", 200
+
+    port = int(os.getenv("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
 
