@@ -20,7 +20,7 @@ TW_CONSUMER_SECRET = os.getenv("TW_CONSUMER_SECRET_ENV")
 TW_ACCESS_TOKEN = os.getenv("TW_ACCESS_TOKEN_ENV")
 TW_ACCESS_SECRET = os.getenv("TW_ACCESS_SECRET_ENV")
 
-INTERVAL = int(os.getenv("INTERVAL", 120))  # seconds
+INTERVAL = 1200  # 20 minutes
 
 ########### DB #############
 
@@ -45,20 +45,16 @@ print("✅ Twitter client OK (get_me returned)", twitter.get_me().data.username)
 
 ############ BOT ###########
 
+latest_text = "No posts yet."
+
 def check_and_post_latest():
+    global latest_text
     try:
         print("\n🔍 Checking Bluesky feed for", TARGET_ACCOUNT)
-
         feed = bluesky.app.bsky.feed.get_author_feed({'actor': TARGET_ACCOUNT, 'limit': 1})
-        print("🧾 Raw feed object type:", type(feed))
-        print("📦 Raw feed data:", feed)
 
-        if not hasattr(feed, "feed"):
-            print("⚠️ Feed response has no `.feed` attribute — structure may differ.")
-            return
-
-        if not feed.feed:
-            print("⚠️ No posts found in feed.feed.")
+        if not hasattr(feed, "feed") or not feed.feed:
+            print("⚠️ No posts found.")
             return
 
         post = feed.feed[0].post
@@ -67,23 +63,23 @@ def check_and_post_latest():
         text = getattr(record, "text", "").strip() if record else ""
 
         print("🆕 Latest post URI:", uri)
-        if text:
-            preview = text if len(text) < 300 else text[:300] + "..."
-            print("🗒️ Bluesky skeet text:\n", preview)
-        else:
-            print("⚠️ Latest post has no text field (might be an image, quote, or reply).")
+        print("🗒️ Bluesky skeet text:", text or "[no text found]")
 
+        # Update global for the Flask page
+        latest_text = text or "[No text in latest post]"
+
+        # Check DB to prevent duplicates
         cur.execute("SELECT uri FROM posted WHERE uri=?", (uri,))
         if cur.fetchone():
-            print("↩️ No new post yet (already in DB).")
+            print("↩️ Already posted to Twitter.")
             return
 
         if not text:
             print("⏭️ Skipping — no text to post.")
             return
 
+        # Ensure tweet length
         if len(text) > 280:
-            print("✂️ Text too long for Twitter; truncating.")
             text = text[:277] + "..."
 
         print("📤 Posting to Twitter:", text)
@@ -109,14 +105,17 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return "🤖 Bluesky → Twitter bot is running", 200
+    return f"""
+    <h1>🤖 Bluesky → Twitter bot is running</h1>
+    <p>Latest Bluesky skeet:</p>
+    <blockquote>{latest_text}</blockquote>
+    """, 200
 
+
+############ MAIN ##########
 
 if __name__ == "__main__":
-    # Start bot loop in background
-    thread = threading.Thread(target=run_loop, daemon=True)
-    thread.start()
-
-    # Keep Render port open
     port = int(os.getenv("PORT", 10000))
+    print("Binding Flask to port:", port)
+    threading.Thread(target=run_loop, daemon=True).start()
     app.run(host="0.0.0.0", port=port)
