@@ -48,10 +48,17 @@ print("✅ Twitter client OK (get_me returned)", twitter.get_me().data.username)
 def check_and_post_latest():
     try:
         print("\n🔍 Checking Bluesky feed for", TARGET_ACCOUNT)
+
         feed = bluesky.app.bsky.feed.get_author_feed({'actor': TARGET_ACCOUNT, 'limit': 1})
+        print("🧾 Raw feed object type:", type(feed))
+        print("📦 Raw feed data:", feed)
+
+        if not hasattr(feed, "feed"):
+            print("⚠️ Feed response has no `.feed` attribute — structure may differ.")
+            return
 
         if not feed.feed:
-            print("⚠️ No posts found.")
+            print("⚠️ No posts found in feed.feed.")
             return
 
         post = feed.feed[0].post
